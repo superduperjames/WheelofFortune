@@ -11,7 +11,7 @@
   .layout { display: grid; grid-template-columns: 400px 1fr; height: calc(100% - 4rem); padding: 1rem; gap: 1rem; }
   .wheel-area { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; z-index: 1; }
   #wheelAmount { padding: 0.5rem 1rem; background: #16a34a; color: #fff; font-weight: bold; border-radius: 8px; margin-bottom: 0.5rem; font-size: 1.4rem; text-align: center; min-width: 80px; z-index: 2; }
-  canvas { background: none; border-radius: 50%; box-shadow: 0 0 40px rgba(255,215,0,0.35); z-index: 1; }
+  canvas { background: none; border-radius: 50%; box-shadow: 0 0 40px rgba(255,215,0,0.35); z-index: 1; cursor: pointer; }
   .arrow { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-bottom: 35px solid red; z-index: 5; }
   .controls { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-top: 1rem; }
   .controls button { padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 999px; border: none; font-weight: 600; cursor: pointer; z-index: 2; }
@@ -86,6 +86,16 @@ adminBtn.addEventListener('click', ()=>{adminPanel.classList.toggle('open');});
 
 const saveAdmin = document.getElementById('saveAdmin');
 const contestantsDiv = document.getElementById('contestants');
+const phraseBoard = document.getElementById('phraseBoard');
+const wheelAmount = document.getElementById('wheelAmount');
+const spinBtn = document.getElementById('spinBtn');
+const solveBtn = document.getElementById('solveBtn');
+const wheel = document.getElementById('wheel');
+const ctx = wheel.getContext('2d');
+const wheelValues = [50,100,200,300,400,500,600,700,800,900,1000,'BANKRUPT'];
+const r = wheel.width/2;
+let currentRotation = 0;
+
 saveAdmin.addEventListener('click', () => {
   contestantsDiv.innerHTML = '';
   phrases = phrasesInput.value.split('\n').map(p => p.trim()).filter(p => p);
@@ -107,7 +117,6 @@ saveAdmin.addEventListener('click', () => {
   renderPhraseBoard();
 });
 
-const phraseBoard = document.getElementById('phraseBoard');
 function renderPhraseBoard(){
   phraseBoard.innerHTML = '';
   const row = document.createElement('div');
@@ -123,12 +132,6 @@ function renderPhraseBoard(){
   phraseBoard.appendChild(row);
 }
 
-// Wheel code
-const wheel = document.getElementById('wheel');
-const ctx = wheel.getContext('2d');
-const wheelValues = [50,100,200,300,400,500,600,700,800,900,1000,'BANKRUPT'];
-const r = wheel.width/2;
-let currentRotation = 0;
 function drawWheel(){
   const slice = 2*Math.PI/wheelValues.length;
   ctx.clearRect(0,0,wheel.width,wheel.height);
@@ -151,47 +154,59 @@ function drawWheel(){
   });
   ctx.restore();
 }
+
 drawWheel();
 
-const spinBtn = document.getElementById('spinBtn');
-const wheelAmount = document.getElementById('wheelAmount');
-spinBtn.addEventListener('click', () => {
+function easeOutCubic(t){ return (--t)*t*t+1; }
+
+spinBtn.addEventListener('click', ()=>{
   if(isSpinning) return;
   isSpinning = true;
   const spinDuration = 3000;
   const startTime = performance.now();
   const slice = 2*Math.PI/wheelValues.length;
-  const targetRotation = Math.random() * 10 * 2 * Math.PI + Math.random() * 2 * Math.PI;
+  const targetRotation = currentRotation + Math.random()*10*2*Math.PI;
 
   function animate(time){
     const elapsed = time - startTime;
     const progress = Math.min(elapsed/spinDuration,1);
-    currentRotation = targetRotation * easeOutCubic(progress);
+    currentRotation = currentRotation + (targetRotation-currentRotation)*easeOutCubic(progress);
     drawWheel();
     if(progress<1) requestAnimationFrame(animate);
     else {
+      currentRotation = targetRotation % (2*Math.PI);
+      drawWheel();
       const stoppedIndex = Math.floor((wheelValues.length - (currentRotation % (2*Math.PI))/slice) % wheelValues.length);
       const value = wheelValues[stoppedIndex];
-      wheelAmount.textContent = typeof value === 'number' ? `$${value}` : value;
       currentSpinValue = value;
+      wheelAmount.textContent = typeof value==='number'?`$${value}`:value;
       isSpinning = false;
     }
   }
   requestAnimationFrame(animate);
 });
 
-function easeOutCubic(t){ return (--t)*t*t+1; }
+solveBtn.addEventListener('click', ()=>{
+  const answer = prompt('Enter your solution:');
+  if(answer && answer.toUpperCase() === currentPhrase.toUpperCase()){
+    displayedLetters = currentPhrase.split('');
+    renderPhraseBoard();
+    alert(players[currentPlayerIndex].name+' solved the phrase!');
+    currentPhrase = phrases[Math.floor(Math.random()*phrases.length)];
+    displayedLetters = currentPhrase.split('').map(c => c===' '?' ':'_');
+    renderPhraseBoard();
+  } else alert('Incorrect!');
+});
 
-// Keyboard letter guessing
-document.addEventListener('keydown', (e)=>{
+document.addEventListener('keydown', e=>{
   if(!currentPhrase || isSpinning) return;
   const letter = e.key.toUpperCase();
   if(!letter.match(/[A-Z]/)) return;
-  let correct = false;
+  let correct=false;
   displayedLetters.forEach((c,i)=>{
     if(currentPhrase[i]===letter && displayedLetters[i]==='_'){
-      displayedLetters[i] = letter;
-      correct = true;
+      displayedLetters[i]=letter;
+      correct=true;
     }
   });
   if(!correct){
@@ -199,8 +214,10 @@ document.addEventListener('keydown', (e)=>{
     currentPlayerIndex = (currentPlayerIndex+1)%players.length;
     document.getElementById(`playerBox${currentPlayerIndex+1}`).classList.add('active');
   } else {
-    players[currentPlayerIndex].score += (typeof currentSpinValue==='number'?currentSpinValue:0);
-    document.querySelector(`#playerBox${currentPlayerIndex+1} .score`).textContent = players[currentPlayerIndex].score;
+    if(typeof currentSpinValue==='number'){
+      players[currentPlayerIndex].score += currentSpinValue;
+      document.querySelector(`#playerBox${currentPlayerIndex+1} .score`).textContent = players[currentPlayerIndex].score;
+    }
   }
   renderPhraseBoard();
 });
