@@ -8,7 +8,7 @@
     body {
       margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, sans-serif;
-      background: radial-gradient(circle at top, #1b2430, #070a0f);
+      background: url('https://res.cloudinary.com/dy7wstify/image/upload/v1765920923/6675070_3390022_drmo5j.jpg') center / cover no-repeat fixed;
       color: #fff;
       height: 100vh;
       overflow: hidden;
@@ -18,8 +18,8 @@
       position: fixed;
       top: 12px;
       right: 12px;
-      padding: 0.4rem 0.75rem;
-      font-size: 0.75rem;
+      padding: 0.35rem 0.7rem;
+      font-size: 0.7rem;
       border-radius: 999px;
       border: none;
       background: rgba(255,255,255,0.15);
@@ -30,17 +30,18 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 420px 1fr;
+      grid-template-columns: 360px 1fr;
       height: 100%;
       padding: 1rem;
       gap: 1rem;
     }
 
-    /* LEFT: WHEEL */
     .wheel-area {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 0.5rem;
     }
 
     canvas {
@@ -49,10 +50,22 @@
       box-shadow: 0 0 40px rgba(255,215,0,0.35);
     }
 
-    /* RIGHT: GAME BOARD */
+    .controls button {
+      padding: 0.35rem 0.9rem;
+      font-size: 0.75rem;
+      border-radius: 999px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(135deg, gold, orange);
+      color: #111;
+    }
+
+    .controls { display: flex; gap: 0.4rem; }
+
     .board {
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: 1fr auto;
       gap: 1rem;
     }
 
@@ -66,11 +79,7 @@
       gap: 0.5rem;
     }
 
-    .phrase-row {
-      display: flex;
-      justify-content: center;
-      gap: 0.35rem;
-    }
+    .phrase-row { display: flex; gap: 0.35rem; justify-content: center; }
 
     .letter-box {
       width: 36px;
@@ -83,25 +92,16 @@
       font-weight: 700;
       font-size: 1.25rem;
       color: #022c22;
-      cursor: pointer;
       user-select: none;
     }
 
-    .letter-box.hidden {
-      background: #14532d;
-      color: transparent;
-    }
+    .letter-box.hidden { background: #14532d; color: transparent; }
+    .letter-box.space { background: transparent; }
 
-    .letter-box.space {
-      background: transparent;
-      cursor: default;
-    }
-
-    /* CONTESTANTS */
     .contestants {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 0.75rem;
+      gap: 0.6rem;
     }
 
     .contestant {
@@ -110,51 +110,30 @@
       padding: 0.5rem;
       text-align: center;
       box-shadow: inset 0 0 0 2px #0f172a;
+      font-size: 0.75rem;
     }
 
-    .contestant.active {
-      box-shadow: 0 0 0 2px gold;
-    }
+    .contestant.active { box-shadow: 0 0 0 2px gold; }
 
     .avatar {
-      width: 64px;
-      height: 64px;
+      width: 56px;
+      height: 56px;
       margin: 0 auto 0.25rem;
       border-radius: 50%;
       background: linear-gradient(135deg, #38bdf8, #a78bfa);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.75rem;
+      font-size: 1.5rem;
     }
 
-    .name {
-      font-size: 0.8rem;
-      opacity: 0.9;
-    }
+    .score { opacity: 0.8; margin-top: 0.15rem; }
 
-    .controls {
-      display: flex;
-      justify-content: center;
-      gap: 0.75rem;
-    }
-
-    button {
-      padding: 0.5rem 1.25rem;
-      border-radius: 999px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      background: linear-gradient(135deg, gold, orange);
-      color: #111;
-    }
-
-    /* ADMIN */
     .admin-panel {
       position: fixed;
       top: 50px;
       right: 12px;
-      width: 280px;
+      width: 300px;
       background: #020617;
       border-radius: 14px;
       padding: 1rem;
@@ -164,12 +143,19 @@
 
     .admin-panel.open { display: block; }
 
-    .admin-panel textarea, .admin-panel input, .admin-panel select {
+    .admin-row {
+      display: grid;
+      grid-template-columns: 1fr 90px;
+      gap: 0.4rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .admin-panel input, .admin-panel select, .admin-panel textarea {
       width: 100%;
-      margin-bottom: 0.5rem;
       border-radius: 8px;
       border: none;
-      padding: 0.4rem;
+      padding: 0.35rem;
+      font-size: 0.75rem;
     }
   </style>
 </head>
@@ -178,16 +164,10 @@
 <button id="adminBtn">Admin</button>
 
 <div class="admin-panel" id="adminPanel">
-  <label>Contestant Names (comma)</label>
-  <textarea id="playersInput">Alice,Bob,Charlie,Denise,Evan</textarea>
+  <strong>Contestants</strong>
+  <div id="adminPlayers"></div>
 
-  <label>Avatar Gender</label>
-  <select id="genderInput">
-    <option value="male">Male</option>
-    <option value="female">Female</option>
-  </select>
-
-  <label>Phrases (one per line)</label>
+  <strong>Phrases</strong>
   <textarea id="phrasesInput">HELLO WORLD
 SPIN TO WIN</textarea>
 
@@ -196,13 +176,18 @@ SPIN TO WIN</textarea>
 
 <div class="layout">
   <div class="wheel-area">
-    <canvas id="wheel" width="360" height="360"></canvas>
+    <canvas id="wheel" width="320" height="320"></canvas>
+    <div class="controls">
+      <button id="spinBtn">Spin</button>
+      <button id="solveBtn">Solve</button>
+    </div>
   </div>
 
   <div class="board">
     <div class="phrase-board" id="phraseBoard"></div>
 
     <div class="controls">
+      <div style="opacity:0.7;font-size:0.75rem">Host controls only</div>
       <button id="spinBtn">Spin</button>
       <button id="solveBtn">Solve</button>
     </div>
@@ -216,19 +201,24 @@ SPIN TO WIN</textarea>
   const ctx = wheel.getContext('2d');
   const phraseBoard = document.getElementById('phraseBoard');
   const contestantsEl = document.getElementById('contestants');
+  const adminPlayersEl = document.getElementById('adminPlayers');
 
   const adminBtn = document.getElementById('adminBtn');
   const adminPanel = document.getElementById('adminPanel');
   const saveAdmin = document.getElementById('saveAdmin');
 
   let players = [];
+  let scores = [];
+  let genders = [];
   let phrases = [];
   let currentPhrase = '';
   let revealed = new Set();
   let currentPlayer = 0;
+  let lastSpin = null;
 
   const wheelValues = [100,200,300,'Lose',400,500,'Bankrupt'];
   let angle = 0;
+  let spinning = false;
 
   function drawWheel() {
     const r = wheel.width / 2;
@@ -254,79 +244,198 @@ SPIN TO WIN</textarea>
     ctx.restore();
   }
 
+  function spinWheel() {
+    if (spinning) return;
+    spinning = true;
+    lastSpin = null;
+    let spinAngle = Math.random()*2000 + 2000;
+    let start;
+
+    function animate(t){
+      if (!start) start = t;
+      const p = t-start;
+      angle = (spinAngle * (1-Math.pow(1-p/3000,3)) * Math.PI)/180;
+      drawWheel();
+      if (p<3000) requestAnimationFrame(animate);
+      else {
+        spinning=false;
+        const slice=(2*Math.PI)/wheelValues.length;
+        const idx = wheelValues.length - Math.floor((angle%(2*Math.PI))/slice) - 1;
+        lastSpin = wheelValues[idx];
+        if (lastSpin==='Bankrupt') {
+          scores[currentPlayer]=0;
+          nextPlayer();
+          renderContestants();
+
+  function endRound() {
+    const winnerIndex = scores.indexOf(Math.max(...scores));
+    const winnerName = players[winnerIndex];
+
+    const banner = document.createElement('div');
+    banner.style.position = 'fixed';
+    banner.style.inset = '0';
+    banner.style.background = 'rgba(0,0,0,0.75)';
+    banner.style.display = 'flex';
+    banner.style.flexDirection = 'column';
+    banner.style.alignItems = 'center';
+    banner.style.justifyContent = 'center';
+    banner.style.fontSize = '2rem';
+    banner.style.zIndex = '100';
+    banner.innerHTML = `<strong>${winnerName} Wins!</strong><button style="margin-top:1rem;padding:0.5rem 1.5rem;border-radius:999px;border:none;font-weight:600;cursor:pointer">Next Round</button>`;
+
+    banner.querySelector('button').onclick = () => {
+      banner.remove();
+      scores = scores.map(() => 0);
+      revealed.clear();
+      currentPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+      currentPlayer = 0;
+      lastSpin = null;
+      renderPhrase();
+      renderContestants();
+    };
+
+    document.body.appendChild(banner);
+  }
+        }
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+
   function renderPhrase() {
     phraseBoard.innerHTML = '';
-    const rows = [currentPhrase];
-    rows.forEach(row=>{
+
+    const maxPerRow = 14;
+    const words = currentPhrase.split(' ');
+    let rows = [];
+    let currentRow = '';
+
+    words.forEach(word => {
+      if ((currentRow + ' ' + word).trim().length <= maxPerRow) {
+        currentRow = (currentRow + ' ' + word).trim();
+      } else {
+        rows.push(currentRow);
+        currentRow = word;
+      }
+    });
+    if (currentRow) rows.push(currentRow);
+
+    rows.forEach(row => {
       const rowEl = document.createElement('div');
       rowEl.className = 'phrase-row';
-      row.split('').forEach(ch=>{
+      row.split('').forEach(ch => {
+        const box = document.createElement('div');
         if (ch === ' ') {
-          const s = document.createElement('div');
-          s.className = 'letter-box space';
-          rowEl.appendChild(s);
+          box.className = 'letter-box space';
         } else {
-          const box = document.createElement('div');
-          box.className = 'letter-box hidden';
+          box.className = 'letter-box' + (revealed.has(ch) ? '' : ' hidden');
           box.textContent = ch;
-          box.onclick = () => {
-            box.classList.remove('hidden');
-            revealed.add(ch);
-          };
-          if (revealed.has(ch)) box.classList.remove('hidden');
-          rowEl.appendChild(box);
         }
+        rowEl.appendChild(box);
       });
       phraseBoard.appendChild(rowEl);
     });
   }
+      else {
+        box.className='letter-box'+(revealed.has(ch)?'':' hidden');
+        box.textContent=ch;
+      }
+      rowEl.appendChild(box);
+    });
+    phraseBoard.appendChild(rowEl);
+  }
 
-  function renderContestants(gender) {
-    contestantsEl.innerHTML = '';
+  function renderContestants(){
+    contestantsEl.innerHTML='';
     players.forEach((p,i)=>{
-      const c = document.createElement('div');
-      c.className = 'contestant' + (i===currentPlayer?' active':'');
-      const a = document.createElement('div');
-      a.className = 'avatar';
-      a.textContent = gender==='male'?'🧑':'👩';
-      const n = document.createElement('div');
-      n.className = 'name';
-      n.textContent = p;
-      c.append(a,n);
+      const c=document.createElement('div');
+      c.className='contestant'+(i===currentPlayer?' active':'');
+      const a=document.createElement('div');
+      a.className='avatar';
+      a.textContent=genders[i]==='female'?'👩':'🧑';
+      const n=document.createElement('div');
+      n.textContent=p;
+      const s=document.createElement('div');
+      s.className='score';
+      s.textContent=`$${scores[i]}`;
+      c.append(a,n,s);
       contestantsEl.appendChild(c);
     });
   }
 
-  document.addEventListener('keydown', e=>{
-    const l = e.key.toUpperCase();
-    if (/^[A-Z]$/.test(l)) {
-      revealed.add(l);
-      renderPhrase();
+  function nextPlayer(){ currentPlayer=(currentPlayer+1)%players.length; }
+
+  document.addEventListener('keydown',e=>{
+    if (adminPanel.classList.contains('open')) return;
+    const l=e.key.toUpperCase();
+    if (!/^[A-Z]$/.test(l) || revealed.has(l) || !lastSpin) return;
+
+    const matches = currentPhrase.split('').filter(ch=>ch===l).length;
+    revealed.add(l);
+    if (matches>0 && typeof lastSpin==='number') {
+      scores[currentPlayer]+=matches*lastSpin;
+    } else {
+      nextPlayer();
     }
+    lastSpin=null;
+    renderPhrase();
+    renderContestants();
   });
 
-  document.getElementById('solveBtn').onclick = ()=>{
+  document.getElementById('solveBtn').onclick = () => {
     const a = prompt('Solve the phrase');
-    if (a && a.toUpperCase()===currentPhrase) {
-      revealed = new Set(currentPhrase.replace(/ /g,''));
+    if (!a) return;
+
+    if (a.toUpperCase() === currentPhrase) {
+      revealed = new Set(currentPhrase.replace(/ /g, ''));
       renderPhrase();
-      alert('Solved!');
+      endRound();
+    } else {
+      nextPlayer();
+      renderContestants();
     }
   };
-
-  adminBtn.onclick = ()=>adminPanel.classList.toggle('open');
-
-  saveAdmin.onclick = ()=>{
-    players = document.getElementById('playersInput').value.split(',').map(p=>p.trim()).slice(0,5);
-    phrases = document.getElementById('phrasesInput').value.split('\n').map(p=>p.trim().toUpperCase());
-    currentPhrase = phrases[Math.floor(Math.random()*phrases.length)];
-    revealed.clear();
-    renderPhrase();
-    renderContestants(document.getElementById('genderInput').value);
-    adminPanel.classList.remove('open');
+    if (!a) return;
+    if (a.toUpperCase()===currentPhrase) {
+      revealed=new Set(currentPhrase.replace(/ /g,''));
+      renderPhrase();
+      alert('Solved!');
+    } else nextPlayer();
+    renderContestants();
   };
 
-  drawWheel();
+  adminBtn.onclick=()=>adminPanel.classList.toggle('open');
+
+  saveAdmin.onclick=()=>{
+    players=[]; scores=[]; genders=[];
+    adminPlayersEl.querySelectorAll('.admin-row').forEach(r=>{
+      const name=r.querySelector('input').value.trim();
+      if (!name) return;
+      players.push(name);
+      genders.push(r.querySelector('select').value);
+      scores.push(0);
+    });
+    phrases=document.getElementById('phrasesInput').value.split('
+').map(p=>p.trim().toUpperCase()).filter(Boolean);
+    currentPhrase=phrases[Math.floor(Math.random()*phrases.length)];
+    revealed.clear(); currentPlayer=0; lastSpin=null;
+    renderPhrase(); renderContestants(); adminPanel.classList.remove('open');
+  };
+
+  document.getElementById('spinBtn').onclick=spinWheel;
+
+  function buildAdminPlayers(){
+    adminPlayersEl.innerHTML='';
+    for(let i=0;i<5;i++){
+      const r=document.createElement('div'); r.className='admin-row';
+      const n=document.createElement('input'); n.placeholder=`Player ${i+1}`;
+      const s=document.createElement('select');
+      s.innerHTML='<option value="male">Male</option><option value="female">Female</option>';
+      r.append(n,s); adminPlayersEl.appendChild(r);
+    }
+  }
+
+  buildAdminPlayers(); drawWheel();
 </script>
 
 </body>
