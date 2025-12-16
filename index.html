@@ -98,6 +98,7 @@ let currentRotation = 0;
 const wheelValues = [50,100,200,300,400,500,600,700,800,900,1000,'BANKRUPT'];
 const r = wheel.width/2;
 const slice = 2*Math.PI/wheelValues.length;
+const vowelCost = 250;
 
 adminBtn.addEventListener('click', ()=>{adminPanel.classList.toggle('open');});
 
@@ -218,6 +219,11 @@ document.addEventListener('keydown', e=>{
   if(!currentPhrase || isSpinning) return;
   const letter = e.key.toUpperCase();
   if(!letter.match(/[A-Z]/)) return;
+  const isVowel = ['A','E','I','O','U'].includes(letter);
+  if(isVowel){
+    players[currentPlayerIndex].score -= vowelCost;
+    document.querySelector(`#playerBox${currentPlayerIndex+1} .score`).textContent = players[currentPlayerIndex].score;
+  }
   let correct=false;
   displayedLetters.forEach((c,i)=>{
     if(currentPhrase[i]===letter && displayedLetters[i]==='_'){
@@ -230,7 +236,7 @@ document.addEventListener('keydown', e=>{
     currentPlayerIndex = (currentPlayerIndex+1)%players.length;
     document.getElementById(`playerBox${currentPlayerIndex+1}`).classList.add('active');
   } else {
-    if(typeof currentSpinValue==='number'){
+    if(typeof currentSpinValue==='number' && !isVowel){
       players[currentPlayerIndex].score += currentSpinValue;
       document.querySelector(`#playerBox${currentPlayerIndex+1} .score`).textContent = players[currentPlayerIndex].score;
     }
