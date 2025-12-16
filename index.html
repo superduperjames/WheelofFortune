@@ -3,16 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Spin the Wheel</title>
+  <title>Wheel Game Show</title>
   <style>
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #1f2933, #0b0f14);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      background: radial-gradient(circle at top, #1b2430, #070a0f);
       color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       height: 100vh;
       overflow: hidden;
     }
@@ -21,77 +18,129 @@
       position: fixed;
       top: 12px;
       right: 12px;
-      font-size: 0.75rem;
       padding: 0.4rem 0.75rem;
+      font-size: 0.75rem;
       border-radius: 999px;
       border: none;
-      cursor: pointer;
       background: rgba(255,255,255,0.15);
       color: #fff;
+      cursor: pointer;
+      z-index: 10;
     }
 
-    .admin-panel {
-      position: fixed;
-      top: 50px;
-      right: 12px;
-      width: 260px;
-      background: #111827;
-      border-radius: 12px;
+    .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      height: 100%;
       padding: 1rem;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-      display: none;
+      gap: 1rem;
     }
 
-    .admin-panel.open { display: block; }
-
-    .admin-panel textarea {
-      width: 100%;
-      margin-bottom: 0.75rem;
-      border-radius: 8px;
-      border: none;
-      padding: 0.5rem;
+    /* LEFT: WHEEL */
+    .wheel-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-
-    .container { text-align: center; }
-
-    .sub { opacity: 0.8; margin-bottom: 0.5rem; }
 
     canvas {
       background: #111;
       border-radius: 50%;
-      box-shadow: 0 0 40px rgba(255, 215, 0, 0.35);
+      box-shadow: 0 0 40px rgba(255,215,0,0.35);
     }
 
-    .phrase {
-      margin-top: 1.5rem;
-      font-size: 1.5rem;
-      letter-spacing: 0.25em;
-    }
-
-    .keyboard {
-      margin-top: 1rem;
+    /* RIGHT: GAME BOARD */
+    .board {
       display: grid;
-      grid-template-columns: repeat(13, 1fr);
-      gap: 0.25rem;
-      max-width: 520px;
-      margin-inline: auto;
+      grid-template-rows: auto 1fr auto;
+      gap: 1rem;
     }
 
-    .key {
-      background: #1f2937;
+    .phrase-board {
+      background: linear-gradient(#0f172a, #020617);
+      border-radius: 16px;
+      padding: 1rem;
+      display: grid;
+      justify-content: center;
+      align-content: center;
+      gap: 0.5rem;
+    }
+
+    .phrase-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.35rem;
+    }
+
+    .letter-box {
+      width: 36px;
+      height: 44px;
+      background: #16a34a;
       border-radius: 6px;
-      padding: 0.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: #022c22;
       cursor: pointer;
-      font-size: 0.75rem;
+      user-select: none;
     }
 
-    .key.used { opacity: 0.3; pointer-events: none; }
+    .letter-box.hidden {
+      background: #14532d;
+      color: transparent;
+    }
 
-    .scores { margin-top: 1rem; font-size: 0.9rem; }
+    .letter-box.space {
+      background: transparent;
+      cursor: default;
+    }
 
-    button.main {
-      margin-top: 1rem;
-      padding: 0.6rem 1.5rem;
+    /* CONTESTANTS */
+    .contestants {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.75rem;
+    }
+
+    .contestant {
+      background: #020617;
+      border-radius: 14px;
+      padding: 0.5rem;
+      text-align: center;
+      box-shadow: inset 0 0 0 2px #0f172a;
+    }
+
+    .contestant.active {
+      box-shadow: 0 0 0 2px gold;
+    }
+
+    .avatar {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 0.25rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #38bdf8, #a78bfa);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+    }
+
+    .name {
+      font-size: 0.8rem;
+      opacity: 0.9;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    button {
+      padding: 0.5rem 1.25rem;
       border-radius: 999px;
       border: none;
       font-weight: 600;
@@ -99,198 +148,186 @@
       background: linear-gradient(135deg, gold, orange);
       color: #111;
     }
+
+    /* ADMIN */
+    .admin-panel {
+      position: fixed;
+      top: 50px;
+      right: 12px;
+      width: 280px;
+      background: #020617;
+      border-radius: 14px;
+      padding: 1rem;
+      display: none;
+      z-index: 20;
+    }
+
+    .admin-panel.open { display: block; }
+
+    .admin-panel textarea, .admin-panel input, .admin-panel select {
+      width: 100%;
+      margin-bottom: 0.5rem;
+      border-radius: 8px;
+      border: none;
+      padding: 0.4rem;
+    }
   </style>
 </head>
 <body>
-  <button id="adminBtn">Admin</button>
 
-  <div class="admin-panel" id="adminPanel">
-    <h2>Game Setup</h2>
-    <label>Players (comma separated)</label>
-    <textarea id="playersInput" placeholder="Alice, Bob, Charlie"></textarea>
+<button id="adminBtn">Admin</button>
 
-    <label>Phrases (one per line)</label>
-    <textarea id="phrasesInput" placeholder="HELLO WORLD
-SPIN TO WIN"></textarea>
+<div class="admin-panel" id="adminPanel">
+  <label>Contestant Names (comma)</label>
+  <textarea id="playersInput">Alice,Bob,Charlie,Denise,Evan</textarea>
 
-    <button id="saveAdmin">Save</button>
-  </div>
+  <label>Avatar Gender</label>
+  <select id="genderInput">
+    <option value="male">Male</option>
+    <option value="female">Female</option>
+  </select>
 
-  <div class="container">
-    <h1>Spin the Wheel</h1>
-    <div class="sub" id="currentPlayer"></div>
+  <label>Phrases (one per line)</label>
+  <textarea id="phrasesInput">HELLO WORLD
+SPIN TO WIN</textarea>
+
+  <button id="saveAdmin">Save</button>
+</div>
+
+<div class="layout">
+  <div class="wheel-area">
     <canvas id="wheel" width="360" height="360"></canvas>
-    <br />
-    <button class="main" id="spinBtn">SPIN</button>
-    <button class="main" id="solveBtn">Solve Phrase</button>
-    <div class="result" id="result"></div>
-    <div class="phrase" id="phrase"></div>
-    <div class="keyboard" id="keyboard"></div>
-    <div class="scores" id="scores"></div>
-  </div>
-    <canvas id="wheel" width="400" height="400"></canvas>
-    <br />
-    <button id="spinBtn">SPIN</button>
-    <div class="result" id="result"></div>
-    <div class="phrase" id="phrase"></div>
   </div>
 
-  <script>
-    const canvas = document.getElementById("wheel");
-    const ctx = canvas.getContext("2d");
-    const spinBtn = document.getElementById("spinBtn");
-    const solveBtn = document.getElementById("solveBtn");
-    const result = document.getElementById("result");
-    const phraseEl = document.getElementById("phrase");
-    const currentPlayerEl = document.getElementById("currentPlayer");
-    const keyboardEl = document.getElementById("keyboard");
-    const scoresEl = document.getElementById("scores");
+  <div class="board">
+    <div class="phrase-board" id="phraseBoard"></div>
 
-    const adminBtn = document.getElementById("adminBtn");
-    const adminPanel = document.getElementById("adminPanel");
-    const saveAdmin = document.getElementById("saveAdmin");
+    <div class="controls">
+      <button id="spinBtn">Spin</button>
+      <button id="solveBtn">Solve</button>
+    </div>
 
-    let players = [];
-    let scores = [];
-    let phrases = [];
-    let guessed = new Set();
-    let currentPlayerIndex = 0;
-    let currentPhrase = "";
+    <div class="contestants" id="contestants"></div>
+  </div>
+</div>
 
-    const options = [100, 200, "Lose", 300, "Bankrupt", 400, 500, "Bonus"];
-    const colors = ["#facc15", "#fb923c", "#22c55e", "#38bdf8", "#f472b6", "#a78bfa", "#f87171", "#34d399"];
+<script>
+  const wheel = document.getElementById('wheel');
+  const ctx = wheel.getContext('2d');
+  const phraseBoard = document.getElementById('phraseBoard');
+  const contestantsEl = document.getElementById('contestants');
 
-    let angle = 0;
-    let spinning = false;
+  const adminBtn = document.getElementById('adminBtn');
+  const adminPanel = document.getElementById('adminPanel');
+  const saveAdmin = document.getElementById('saveAdmin');
 
-    function drawWheel() {
-      const r = canvas.width / 2;
-      const slice = (2 * Math.PI) / options.length;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  let players = [];
+  let phrases = [];
+  let currentPhrase = '';
+  let revealed = new Set();
+  let currentPlayer = 0;
+
+  const wheelValues = [100,200,300,'Lose',400,500,'Bankrupt'];
+  let angle = 0;
+
+  function drawWheel() {
+    const r = wheel.width / 2;
+    const slice = (2*Math.PI)/wheelValues.length;
+    ctx.clearRect(0,0,wheel.width,wheel.height);
+    ctx.save();
+    ctx.translate(r,r);
+    ctx.rotate(angle);
+    wheelValues.forEach((v,i)=>{
+      ctx.beginPath();
+      ctx.fillStyle = i%2 ? '#facc15' : '#fb923c';
+      ctx.moveTo(0,0);
+      ctx.arc(0,0,r,slice*i,slice*(i+1));
+      ctx.fill();
       ctx.save();
-      ctx.translate(r, r);
-      ctx.rotate(angle);
-      options.forEach((opt, i) => {
-        ctx.beginPath();
-        ctx.fillStyle = colors[i];
-        ctx.moveTo(0, 0);
-        ctx.arc(0, 0, r, slice * i, slice * (i + 1));
-        ctx.fill();
-        ctx.save();
-        ctx.rotate(slice * i + slice / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = "#111";
-        ctx.font = "bold 14px sans-serif";
-        ctx.fillText(opt, r - 10, 5);
-        ctx.restore();
-      });
+      ctx.rotate(slice*i+slice/2);
+      ctx.textAlign='right';
+      ctx.fillStyle='#111';
+      ctx.font='bold 14px sans-serif';
+      ctx.fillText(v,r-10,5);
       ctx.restore();
-    }
+    });
+    ctx.restore();
+  }
 
-    function maskedPhrase() {
-      return currentPhrase.split("").map(l => l === " " ? " " : guessed.has(l) ? l : "_").join("");
-    }
-
-    function updatePhrase() {
-      phraseEl.textContent = maskedPhrase();
-    }
-
-    function updateScores() {
-      scoresEl.textContent = players.map((p,i) => `${p}: ${scores[i]}`).join(" | ");
-    }
-
-    function nextPlayer() {
-      currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-      currentPlayerEl.textContent = `Current Player: ${players[currentPlayerIndex]}`;
-    }
-
-    function buildKeyboard() {
-      keyboardEl.innerHTML = "";
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(l => {
-        const k = document.createElement("div");
-        k.textContent = l;
-        k.className = "key";
-        k.onclick = () => guessLetter(l);
-        keyboardEl.appendChild(k);
-      });
-    }
-
-    function guessLetter(letter) {
-      if (guessed.has(letter)) return;
-      guessed.add(letter);
-      document.querySelectorAll('.key').forEach(k => { if (k.textContent === letter) k.classList.add('used'); });
-
-      const matches = currentPhrase.split("").filter(l => l === letter).length;
-      if (matches > 0) {
-        scores[currentPlayerIndex] += matches * lastSpinValue;
-        updatePhrase();
-        updateScores();
-      } else {
-        nextPlayer();
-      }
-    }
-
-    let lastSpinValue = 0;
-
-    function spin() {
-      if (spinning) return;
-      spinning = true;
-      let spinAngle = Math.random() * 2000 + 2000;
-      let duration = 3000;
-      let start = null;
-
-      function animate(t) {
-        if (!start) start = t;
-        const p = t - start;
-        angle = (spinAngle * (1 - Math.pow(1 - p / duration, 3)) * Math.PI) / 180;
-        drawWheel();
-        if (p < duration) requestAnimationFrame(animate);
-        else {
-          spinning = false;
-          const slice = (2 * Math.PI) / options.length;
-          const idx = options.length - Math.floor((angle % (2 * Math.PI)) / slice) - 1;
-          const val = options[idx];
-          result.textContent = `Result: ${val}`;
-          if (val === "Bankrupt") scores[currentPlayerIndex] = 0;
-          if (val === "Lose") nextPlayer();
-          lastSpinValue = typeof val === 'number' ? val : 0;
-          updateScores();
+  function renderPhrase() {
+    phraseBoard.innerHTML = '';
+    const rows = [currentPhrase];
+    rows.forEach(row=>{
+      const rowEl = document.createElement('div');
+      rowEl.className = 'phrase-row';
+      row.split('').forEach(ch=>{
+        if (ch === ' ') {
+          const s = document.createElement('div');
+          s.className = 'letter-box space';
+          rowEl.appendChild(s);
+        } else {
+          const box = document.createElement('div');
+          box.className = 'letter-box hidden';
+          box.textContent = ch;
+          box.onclick = () => {
+            box.classList.remove('hidden');
+            revealed.add(ch);
+          };
+          if (revealed.has(ch)) box.classList.remove('hidden');
+          rowEl.appendChild(box);
         }
-      }
-      requestAnimationFrame(animate);
+      });
+      phraseBoard.appendChild(rowEl);
+    });
+  }
+
+  function renderContestants(gender) {
+    contestantsEl.innerHTML = '';
+    players.forEach((p,i)=>{
+      const c = document.createElement('div');
+      c.className = 'contestant' + (i===currentPlayer?' active':'');
+      const a = document.createElement('div');
+      a.className = 'avatar';
+      a.textContent = gender==='male'?'🧑':'👩';
+      const n = document.createElement('div');
+      n.className = 'name';
+      n.textContent = p;
+      c.append(a,n);
+      contestantsEl.appendChild(c);
+    });
+  }
+
+  document.addEventListener('keydown', e=>{
+    const l = e.key.toUpperCase();
+    if (/^[A-Z]$/.test(l)) {
+      revealed.add(l);
+      renderPhrase();
     }
+  });
 
-    solveBtn.onclick = () => {
-      const attempt = prompt("Solve the phrase:");
-      if (!attempt) return;
-      if (attempt.toUpperCase() === currentPhrase) {
-        alert("Correct! 🎉");
-        guessed = new Set(currentPhrase.replace(/ /g, "").split(""));
-        updatePhrase();
-      } else {
-        alert("Nope! Turn passes.");
-        nextPlayer();
-      }
-    };
+  document.getElementById('solveBtn').onclick = ()=>{
+    const a = prompt('Solve the phrase');
+    if (a && a.toUpperCase()===currentPhrase) {
+      revealed = new Set(currentPhrase.replace(/ /g,''));
+      renderPhrase();
+      alert('Solved!');
+    }
+  };
 
-    adminBtn.onclick = () => adminPanel.classList.toggle("open");
+  adminBtn.onclick = ()=>adminPanel.classList.toggle('open');
 
-    saveAdmin.onclick = () => {
-      players = document.getElementById("playersInput").value.split(",").map(p => p.trim()).filter(Boolean);
-      scores = players.map(() => 0);
-      phrases = document.getElementById("phrasesInput").value.split("\n").map(p => p.trim().toUpperCase()).filter(Boolean);
-      currentPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-      guessed = new Set();
-      buildKeyboard();
-      updatePhrase();
-      updateScores();
-      currentPlayerIndex = 0;
-      currentPlayerEl.textContent = `Current Player: ${players[0]}`;
-      adminPanel.classList.remove("open");
-    };
+  saveAdmin.onclick = ()=>{
+    players = document.getElementById('playersInput').value.split(',').map(p=>p.trim()).slice(0,5);
+    phrases = document.getElementById('phrasesInput').value.split('\n').map(p=>p.trim().toUpperCase());
+    currentPhrase = phrases[Math.floor(Math.random()*phrases.length)];
+    revealed.clear();
+    renderPhrase();
+    renderContestants(document.getElementById('genderInput').value);
+    adminPanel.classList.remove('open');
+  };
 
-    spinBtn.onclick = spin;
-    drawWheel();
-  </script>
+  drawWheel();
+</script>
+
 </body>
 </html>
