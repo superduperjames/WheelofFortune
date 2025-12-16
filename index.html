@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spin the Wheel</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1f2933, #0b0f14);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #adminBtn {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      font-size: 0.75rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+
+    .admin-panel {
+      position: fixed;
+      top: 50px;
+      right: 12px;
+      width: 260px;
+      background: #111827;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      display: none;
+    }
+
+    .admin-panel.open { display: block; }
+
+    .admin-panel textarea {
+      width: 100%;
+      margin-bottom: 0.75rem;
+      border-radius: 8px;
+      border: none;
+      padding: 0.5rem;
+    }
+
+    .container { text-align: center; }
+
+    .sub { opacity: 0.8; margin-bottom: 0.5rem; }
+
+    canvas {
+      background: #111;
+      border-radius: 50%;
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.35);
+    }
+
+    .phrase {
+      margin-top: 1.5rem;
+      font-size: 1.5rem;
+      letter-spacing: 0.25em;
+    }
+
+    .keyboard {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(13, 1fr);
+      gap: 0.25rem;
+      max-width: 520px;
+      margin-inline: auto;
+    }
+
+    .key {
+      background: #1f2937;
+      border-radius: 6px;
+      padding: 0.4rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+
+    .key.used { opacity: 0.3; pointer-events: none; }
+
+    .scores { margin-top: 1rem; font-size: 0.9rem; }
+
+    button.main {
+      margin-top: 1rem;
+      padding: 0.6rem 1.5rem;
+      border-radius: 999px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(135deg, gold, orange);
+      color: #111;
+    }
+  </style>
+</head>
+<body>
+  <button id="adminBtn">Admin</button>
+
+  <div class="admin-panel" id="adminPanel">
+    <h2>Game Setup</h2>
+    <label>Players (comma separated)</label>
+    <textarea id="playersInput" placeholder="Alice, Bob, Charlie"></textarea>
+
+    <label>Phrases (one per line)</label>
+    <textarea id="phrasesInput" placeholder="HELLO WORLD
+SPIN TO WIN"></textarea>
+
+    <button id="saveAdmin">Save</button>
+  </div>
+
+  <div class="container">
+    <h1>Spin the Wheel</h1>
+    <div class="sub" id="currentPlayer"></div>
+    <canvas id="wheel" width="360" height="360"></canvas>
+    <br />
+    <button class="main" id="spinBtn">SPIN</button>
+    <button class="main" id="solveBtn">Solve Phrase</button>
+    <div class="result" id="result"></div>
+    <div class="phrase" id="phrase"></div>
+    <div class="keyboard" id="keyboard"></div>
+    <div class="scores" id="scores"></div>
+  </div>
+    <canvas id="wheel" width="400" height="400"></canvas>
+    <br />
+    <button id="spinBtn">SPIN</button>
+    <div class="result" id="result"></div>
+    <div class="phrase" id="phrase"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+    const spinBtn = document.getElementById("spinBtn");
+    const solveBtn = document.getElementById("solveBtn");
+    const result = document.getElementById("result");
+    const phraseEl = document.getElementById("phrase");
+    const currentPlayerEl = document.getElementById("currentPlayer");
+    const keyboardEl = document.getElementById("keyboard");
+    const scoresEl = document.getElementById("scores");
+
+    const adminBtn = document.getElementById("adminBtn");
+    const adminPanel = document.getElementById("adminPanel");
+    const saveAdmin = document.getElementById("saveAdmin");
+
+    let players = [];
+    let scores = [];
+    let phrases = [];
+    let guessed = new Set();
+    let currentPlayerIndex = 0;
+    let currentPhrase = "";
+
+    const options = [100, 200, "Lose", 300, "Bankrupt", 400, 500, "Bonus"];
+    const colors = ["#facc15", "#fb923c", "#22c55e", "#38bdf8", "#f472b6", "#a78bfa", "#f87171", "#34d399"];
+
+    let angle = 0;
+    let spinning = false;
+
+    function drawWheel() {
+      const r = canvas.width / 2;
+      const slice = (2 * Math.PI) / options.length;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.translate(r, r);
+      ctx.rotate(angle);
+      options.forEach((opt, i) => {
+        ctx.beginPath();
+        ctx.fillStyle = colors[i];
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, r, slice * i, slice * (i + 1));
+        ctx.fill();
+        ctx.save();
+        ctx.rotate(slice * i + slice / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#111";
+        ctx.font = "bold 14px sans-serif";
+        ctx.fillText(opt, r - 10, 5);
+        ctx.restore();
+      });
+      ctx.restore();
+    }
+
+    function maskedPhrase() {
+      return currentPhrase.split("").map(l => l === " " ? " " : guessed.has(l) ? l : "_").join("");
+    }
+
+    function updatePhrase() {
+      phraseEl.textContent = maskedPhrase();
+    }
+
+    function updateScores() {
+      scoresEl.textContent = players.map((p,i) => `${p}: ${scores[i]}`).join(" | ");
+    }
+
+    function nextPlayer() {
+      currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+      currentPlayerEl.textContent = `Current Player: ${players[currentPlayerIndex]}`;
+    }
+
+    function buildKeyboard() {
+      keyboardEl.innerHTML = "";
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(l => {
+        const k = document.createElement("div");
+        k.textContent = l;
+        k.className = "key";
+        k.onclick = () => guessLetter(l);
+        keyboardEl.appendChild(k);
+      });
+    }
+
+    function guessLetter(letter) {
+      if (guessed.has(letter)) return;
+      guessed.add(letter);
+      document.querySelectorAll('.key').forEach(k => { if (k.textContent === letter) k.classList.add('used'); });
+
+      const matches = currentPhrase.split("").filter(l => l === letter).length;
+      if (matches > 0) {
+        scores[currentPlayerIndex] += matches * lastSpinValue;
+        updatePhrase();
+        updateScores();
+      } else {
+        nextPlayer();
+      }
+    }
+
+    let lastSpinValue = 0;
+
+    function spin() {
+      if (spinning) return;
+      spinning = true;
+      let spinAngle = Math.random() * 2000 + 2000;
+      let duration = 3000;
+      let start = null;
+
+      function animate(t) {
+        if (!start) start = t;
+        const p = t - start;
+        angle = (spinAngle * (1 - Math.pow(1 - p / duration, 3)) * Math.PI) / 180;
+        drawWheel();
+        if (p < duration) requestAnimationFrame(animate);
+        else {
+          spinning = false;
+          const slice = (2 * Math.PI) / options.length;
+          const idx = options.length - Math.floor((angle % (2 * Math.PI)) / slice) - 1;
+          const val = options[idx];
+          result.textContent = `Result: ${val}`;
+          if (val === "Bankrupt") scores[currentPlayerIndex] = 0;
+          if (val === "Lose") nextPlayer();
+          lastSpinValue = typeof val === 'number' ? val : 0;
+          updateScores();
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    solveBtn.onclick = () => {
+      const attempt = prompt("Solve the phrase:");
+      if (!attempt) return;
+      if (attempt.toUpperCase() === currentPhrase) {
+        alert("Correct! 🎉");
+        guessed = new Set(currentPhrase.replace(/ /g, "").split(""));
+        updatePhrase();
+      } else {
+        alert("Nope! Turn passes.");
+        nextPlayer();
+      }
+    };
+
+    adminBtn.onclick = () => adminPanel.classList.toggle("open");
+
+    saveAdmin.onclick = () => {
+      players = document.getElementById("playersInput").value.split(",").map(p => p.trim()).filter(Boolean);
+      scores = players.map(() => 0);
+      phrases = document.getElementById("phrasesInput").value.split("\n").map(p => p.trim().toUpperCase()).filter(Boolean);
+      currentPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+      guessed = new Set();
+      buildKeyboard();
+      updatePhrase();
+      updateScores();
+      currentPlayerIndex = 0;
+      currentPlayerEl.textContent = `Current Player: ${players[0]}`;
+      adminPanel.classList.remove("open");
+    };
+
+    spinBtn.onclick = spin;
+    drawWheel();
+  </script>
+</body>
+</html>
