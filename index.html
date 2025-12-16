@@ -50,6 +50,13 @@
       box-shadow: 0 0 40px rgba(255,215,0,0.35);
     }
 
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
     .controls button {
       padding: 0.35rem 0.9rem;
       font-size: 0.75rem;
@@ -60,8 +67,6 @@
       background: linear-gradient(135deg, gold, orange);
       color: #111;
     }
-
-    .controls { display: flex; gap: 0.4rem; }
 
     .board {
       display: grid;
@@ -79,7 +84,11 @@
       gap: 0.5rem;
     }
 
-    .phrase-row { display: flex; gap: 0.35rem; justify-content: center; }
+    .phrase-row {
+      display: flex;
+      gap: 0.35rem;
+      justify-content: center;
+    }
 
     .letter-box {
       width: 36px;
@@ -92,7 +101,6 @@
       font-weight: 700;
       font-size: 1.25rem;
       color: #022c22;
-      user-select: none;
     }
 
     .letter-box.hidden { background: #14532d; color: transparent; }
@@ -150,7 +158,9 @@
       margin-bottom: 0.4rem;
     }
 
-    .admin-panel input, .admin-panel select, .admin-panel textarea {
+    .admin-panel input,
+    .admin-panel select,
+    .admin-panel textarea {
       width: 100%;
       border-radius: 8px;
       border: none;
@@ -180,18 +190,12 @@ SPIN TO WIN</textarea>
     <div class="controls">
       <button id="spinBtn">Spin</button>
       <button id="solveBtn">Solve</button>
+      <div style="font-size:0.7rem;opacity:0.75">Vowels cost $250</div>
     </div>
   </div>
 
   <div class="board">
     <div class="phrase-board" id="phraseBoard"></div>
-
-    <div class="controls">
-      <div style="opacity:0.7;font-size:0.75rem">Host controls only</div>
-      <button id="spinBtn">Spin</button>
-      <button id="solveBtn">Solve</button>
-    </div>
-
     <div class="contestants" id="contestants"></div>
   </div>
 </div>
@@ -216,31 +220,35 @@ SPIN TO WIN</textarea>
   let currentPlayer = 0;
   let lastSpin = null;
 
-  const wheelValues = [100,200,300,'Lose',400,500,'Bankrupt'];
+  const wheelValues = [100,150,200,250,300,350,400,450,500,'BANKRUPT','LOSE'];
+  const VOWEL_COST = 250;
   let angle = 0;
   let spinning = false;
 
   function drawWheel() {
     const r = wheel.width / 2;
-    const slice = (2*Math.PI)/wheelValues.length;
-    ctx.clearRect(0,0,wheel.width,wheel.height);
+    const slice = (2 * Math.PI) / wheelValues.length;
+    ctx.clearRect(0, 0, wheel.width, wheel.height);
     ctx.save();
-    ctx.translate(r,r);
+    ctx.translate(r, r);
     ctx.rotate(angle);
-    wheelValues.forEach((v,i)=>{
+
+    wheelValues.forEach((v, i) => {
       ctx.beginPath();
-      ctx.fillStyle = i%2 ? '#facc15' : '#fb923c';
-      ctx.moveTo(0,0);
-      ctx.arc(0,0,r,slice*i,slice*(i+1));
+      ctx.fillStyle = i % 2 ? '#facc15' : '#fb923c';
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, r, slice * i, slice * (i + 1));
       ctx.fill();
+
       ctx.save();
-      ctx.rotate(slice*i+slice/2);
-      ctx.textAlign='right';
-      ctx.fillStyle='#111';
-      ctx.font='bold 14px sans-serif';
-      ctx.fillText(v,r-10,5);
+      ctx.rotate(slice * i + slice / 2);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#111';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillText(v, r - 10, 5);
       ctx.restore();
     });
+
     ctx.restore();
   }
 
@@ -248,63 +256,40 @@ SPIN TO WIN</textarea>
     if (spinning) return;
     spinning = true;
     lastSpin = null;
-    let spinAngle = Math.random()*2000 + 2000;
-    let start;
 
-    function animate(t){
+    const spinAngle = Math.random() * 2000 + 2000;
+    let start = null;
+
+    function animate(t) {
       if (!start) start = t;
-      const p = t-start;
-      angle = (spinAngle * (1-Math.pow(1-p/3000,3)) * Math.PI)/180;
+      const p = t - start;
+      angle = (spinAngle * (1 - Math.pow(1 - p / 3000, 3)) * Math.PI) / 180;
       drawWheel();
-      if (p<3000) requestAnimationFrame(animate);
-      else {
-        spinning=false;
-        const slice=(2*Math.PI)/wheelValues.length;
-        const idx = wheelValues.length - Math.floor((angle%(2*Math.PI))/slice) - 1;
+
+      if (p < 3000) {
+        requestAnimationFrame(animate);
+      } else {
+        spinning = false;
+        const slice = (2 * Math.PI) / wheelValues.length;
+        const idx = wheelValues.length - Math.floor((angle % (2 * Math.PI)) / slice) - 1;
         lastSpin = wheelValues[idx];
-        if (lastSpin==='Bankrupt') {
-          scores[currentPlayer]=0;
+
+        if (lastSpin === 'BANKRUPT') {
+          scores[currentPlayer] = 0;
           nextPlayer();
           renderContestants();
-
-  function endRound() {
-    const winnerIndex = scores.indexOf(Math.max(...scores));
-    const winnerName = players[winnerIndex];
-
-    const banner = document.createElement('div');
-    banner.style.position = 'fixed';
-    banner.style.inset = '0';
-    banner.style.background = 'rgba(0,0,0,0.75)';
-    banner.style.display = 'flex';
-    banner.style.flexDirection = 'column';
-    banner.style.alignItems = 'center';
-    banner.style.justifyContent = 'center';
-    banner.style.fontSize = '2rem';
-    banner.style.zIndex = '100';
-    banner.innerHTML = `<strong>${winnerName} Wins!</strong><button style="margin-top:1rem;padding:0.5rem 1.5rem;border-radius:999px;border:none;font-weight:600;cursor:pointer">Next Round</button>`;
-
-    banner.querySelector('button').onclick = () => {
-      banner.remove();
-      scores = scores.map(() => 0);
-      revealed.clear();
-      currentPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-      currentPlayer = 0;
-      lastSpin = null;
-      renderPhrase();
-      renderContestants();
-    };
-
-    document.body.appendChild(banner);
-  }
+        } else if (lastSpin === 'LOSE') {
+          nextPlayer();
+          renderContestants();
         }
       }
     }
+
     requestAnimationFrame(animate);
   }
 
   function renderPhrase() {
     phraseBoard.innerHTML = '';
-
     const maxPerRow = 14;
     const words = currentPhrase.split(' ');
     let rows = [];
@@ -318,11 +303,13 @@ SPIN TO WIN</textarea>
         currentRow = word;
       }
     });
+
     if (currentRow) rows.push(currentRow);
 
     rows.forEach(row => {
       const rowEl = document.createElement('div');
       rowEl.className = 'phrase-row';
+
       row.split('').forEach(ch => {
         const box = document.createElement('div');
         if (ch === ' ') {
@@ -333,51 +320,63 @@ SPIN TO WIN</textarea>
         }
         rowEl.appendChild(box);
       });
+
       phraseBoard.appendChild(rowEl);
     });
   }
-      else {
-        box.className='letter-box'+(revealed.has(ch)?'':' hidden');
-        box.textContent=ch;
-      }
-      rowEl.appendChild(box);
-    });
-    phraseBoard.appendChild(rowEl);
-  }
 
-  function renderContestants(){
-    contestantsEl.innerHTML='';
-    players.forEach((p,i)=>{
-      const c=document.createElement('div');
-      c.className='contestant'+(i===currentPlayer?' active':'');
-      const a=document.createElement('div');
-      a.className='avatar';
-      a.textContent=genders[i]==='female'?'👩':'🧑';
-      const n=document.createElement('div');
-      n.textContent=p;
-      const s=document.createElement('div');
-      s.className='score';
-      s.textContent=`$${scores[i]}`;
-      c.append(a,n,s);
+  function renderContestants() {
+    contestantsEl.innerHTML = '';
+    players.forEach((p, i) => {
+      const c = document.createElement('div');
+      c.className = 'contestant' + (i === currentPlayer ? ' active' : '');
+
+      const a = document.createElement('div');
+      a.className = 'avatar';
+      a.textContent = genders[i] === 'female' ? '👩' : '🧑';
+
+      const n = document.createElement('div');
+      n.textContent = p;
+
+      const s = document.createElement('div');
+      s.className = 'score';
+      s.textContent = `$${scores[i]}`;
+
+      c.append(a, n, s);
       contestantsEl.appendChild(c);
     });
   }
 
-  function nextPlayer(){ currentPlayer=(currentPlayer+1)%players.length; }
+  function nextPlayer() {
+    currentPlayer = (currentPlayer + 1) % players.length;
+    lastSpin = null;
+  }
 
-  document.addEventListener('keydown',e=>{
+  document.addEventListener('keydown', e => {
     if (adminPanel.classList.contains('open')) return;
-    const l=e.key.toUpperCase();
-    if (!/^[A-Z]$/.test(l) || revealed.has(l) || !lastSpin) return;
 
-    const matches = currentPhrase.split('').filter(ch=>ch===l).length;
+    const l = e.key.toUpperCase();
+    if (!/^[A-Z]$/.test(l)) return;
+    if (revealed.has(l)) return;
+
+    const isVowel = ['A','E','I','O','U'].includes(l);
+
+    if (isVowel) {
+      if (scores[currentPlayer] < VOWEL_COST) return;
+      scores[currentPlayer] -= VOWEL_COST;
+    } else {
+      if (typeof lastSpin !== 'number') return;
+    }
+
+    const count = currentPhrase.split(l).length - 1;
     revealed.add(l);
-    if (matches>0 && typeof lastSpin==='number') {
-      scores[currentPlayer]+=matches*lastSpin;
+
+    if (count > 0) {
+      if (!isVowel) scores[currentPlayer] += lastSpin * count;
     } else {
       nextPlayer();
     }
-    lastSpin=null;
+
     renderPhrase();
     renderContestants();
   });
@@ -395,47 +394,90 @@ SPIN TO WIN</textarea>
       renderContestants();
     }
   };
-    if (!a) return;
-    if (a.toUpperCase()===currentPhrase) {
-      revealed=new Set(currentPhrase.replace(/ /g,''));
+
+  function endRound() {
+    const winnerIndex = scores.indexOf(Math.max(...scores));
+    const winnerName = players[winnerIndex];
+
+    const banner = document.createElement('div');
+    banner.style.position = 'fixed';
+    banner.style.inset = '0';
+    banner.style.background = 'rgba(0,0,0,0.75)';
+    banner.style.display = 'flex';
+    banner.style.flexDirection = 'column';
+    banner.style.alignItems = 'center';
+    banner.style.justifyContent = 'center';
+    banner.style.fontSize = '2rem';
+    banner.style.zIndex = '100';
+
+    banner.innerHTML = `<strong>${winnerName} Wins!</strong>
+      <button style="margin-top:1rem;padding:0.5rem 1.5rem;border-radius:999px;border:none;font-weight:600;cursor:pointer">Next Round</button>`;
+
+    banner.querySelector('button').onclick = () => {
+      banner.remove();
+      scores = scores.map(() => 0);
+      revealed.clear();
+      currentPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+      currentPlayer = 0;
+      lastSpin = null;
       renderPhrase();
-      alert('Solved!');
-    } else nextPlayer();
-    renderContestants();
-  };
+      renderContestants();
+    };
 
-  adminBtn.onclick=()=>adminPanel.classList.toggle('open');
+    document.body.appendChild(banner);
+  }
 
-  saveAdmin.onclick=()=>{
-    players=[]; scores=[]; genders=[];
-    adminPlayersEl.querySelectorAll('.admin-row').forEach(r=>{
-      const name=r.querySelector('input').value.trim();
+  adminBtn.onclick = () => adminPanel.classList.toggle('open');
+
+  saveAdmin.onclick = () => {
+    players = [];
+    scores = [];
+    genders = [];
+
+    adminPlayersEl.querySelectorAll('.admin-row').forEach(r => {
+      const name = r.querySelector('input').value.trim();
       if (!name) return;
       players.push(name);
       genders.push(r.querySelector('select').value);
       scores.push(0);
     });
-    phrases=document.getElementById('phrasesInput').value.split('
-').map(p=>p.trim().toUpperCase()).filter(Boolean);
-    currentPhrase=phrases[Math.floor(Math.random()*phrases.length)];
-    revealed.clear(); currentPlayer=0; lastSpin=null;
-    renderPhrase(); renderContestants(); adminPanel.classList.remove('open');
+
+    phrases = document.getElementById('phrasesInput')
+      .value.split('\n')
+      .map(p => p.trim().toUpperCase())
+      .filter(Boolean);
+
+    currentPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+    revealed.clear();
+    currentPlayer = 0;
+    lastSpin = null;
+
+    renderPhrase();
+    renderContestants();
+    adminPanel.classList.remove('open');
   };
 
-  document.getElementById('spinBtn').onclick=spinWheel;
+  document.getElementById('spinBtn').onclick = spinWheel;
 
-  function buildAdminPlayers(){
-    adminPlayersEl.innerHTML='';
-    for(let i=0;i<5;i++){
-      const r=document.createElement('div'); r.className='admin-row';
-      const n=document.createElement('input'); n.placeholder=`Player ${i+1}`;
-      const s=document.createElement('select');
-      s.innerHTML='<option value="male">Male</option><option value="female">Female</option>';
-      r.append(n,s); adminPlayersEl.appendChild(r);
+  function buildAdminPlayers() {
+    adminPlayersEl.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+      const r = document.createElement('div');
+      r.className = 'admin-row';
+
+      const n = document.createElement('input');
+      n.placeholder = `Player ${i + 1}`;
+
+      const s = document.createElement('select');
+      s.innerHTML = '<option value="male">Male</option><option value="female">Female</option>';
+
+      r.append(n, s);
+      adminPlayersEl.appendChild(r);
     }
   }
 
-  buildAdminPlayers(); drawWheel();
+  buildAdminPlayers();
+  drawWheel();
 </script>
 
 </body>
