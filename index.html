@@ -3,70 +3,50 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Wheel Game Show</title>
+<title>Mobi-wheel of Fortune</title>
 <style>
-  body {
-    margin: 0;
-    font-family: system-ui, -apple-system, Segoe UI, sans-serif;
-    background: url('https://res.cloudinary.com/dy7wstify/image/upload/v1765920923/6675070_3390022_drmo5j.jpg') center / cover no-repeat fixed;
-    color: #fff;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  #adminBtn { position: fixed; top: 12px; right: 12px; padding: 0.35rem 0.7rem; font-size: 0.7rem; border-radius: 999px; border: none; background: rgba(255,255,255,0.15); color: #fff; cursor: pointer; z-index: 10; }
-
-  .layout { display: grid; grid-template-columns: 400px 1fr; height: 100%; padding: 1rem; gap: 1rem; }
-
-  .wheel-area { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; }
-
-  #wheelAmount { padding: 0.5rem 1rem; background: #16a34a; color: #fff; font-weight: bold; border-radius: 8px; margin-bottom: 0.5rem; font-size: 1.4rem; text-align: center; min-width: 80px; }
-
-  canvas { background: #111; border-radius: 50%; box-shadow: 0 0 40px rgba(255,215,0,0.35); }
-
-  .arrow {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 20px solid transparent;
-    border-right: 20px solid transparent;
-    border-bottom: 35px solid yellow;
-    z-index: 5;
-  }
-
+  body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: url('https://res.cloudinary.com/dy7wstify/image/upload/v1765920923/6675070_3390022_drmo5j.jpg') center / cover no-repeat fixed; color: #fff; height: 100vh; overflow: hidden; }
+  h1 { text-align: center; margin: 1rem 0 0.5rem 0; font-size: 2rem; color: #facc15; text-shadow: 2px 2px 4px #000; }
+  #adminBtn { position: fixed; top: 12px; right: 12px; padding: 0.35rem 0.7rem; font-size: 0.7rem; border-radius: 999px; border: none; background: rgba(255,255,255,0.15); color: #fff; cursor: pointer; z-index: 100; }
+  .layout { display: grid; grid-template-columns: 400px 1fr; height: calc(100% - 4rem); padding: 1rem; gap: 1rem; }
+  .wheel-area { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; z-index: 1; }
+  #wheelAmount { padding: 0.5rem 1rem; background: #16a34a; color: #fff; font-weight: bold; border-radius: 8px; margin-bottom: 0.5rem; font-size: 1.4rem; text-align: center; min-width: 80px; z-index: 2; }
+  canvas { background: none; border-radius: 50%; box-shadow: 0 0 40px rgba(255,215,0,0.35); z-index: 1; }
+  .arrow { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-bottom: 35px solid red; z-index: 5; }
   .controls { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-top: 1rem; }
-  .controls button { padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 999px; border: none; font-weight: 600; cursor: pointer; }
+  .controls button { padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 999px; border: none; font-weight: 600; cursor: pointer; z-index: 2; }
   #spinBtn { background: #16a34a; color: #fff; }
   #solveBtn { background: #2563eb; color: #fff; }
-
-  .board { display: grid; grid-template-rows: 1fr auto; gap: 1rem; }
+  .board { display: grid; grid-template-rows: 1fr auto; gap: 1rem; z-index: 1; }
   .phrase-board { background: #0f172a; border: 4px solid #facc15; border-radius: 16px; padding: 1rem; display: grid; justify-content: center; align-content: center; gap: 0.5rem; }
-  .phrase-row { display: flex; gap: 0.35rem; justify-content: center; }
-  .letter-box { width: 48px; height: 60px; background: #16a34a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.5rem; color: #022c22; }
+  .phrase-row { display: flex; gap: 0.35rem; justify-content: center; flex-wrap: wrap; }
+  .letter-box { width: 48px; height: 60px; background: #16a34a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.5rem; color: #022c22; cursor: pointer; }
   .letter-box.hidden { background: #14532d; color: transparent; }
-  .letter-box.space { background: transparent; }
-
-  .contestants { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.6rem; margin-top: 1rem; }
-  .contestant { background: #020617; border-radius: 14px; padding: 0.5rem; text-align: center; box-shadow: inset 0 0 0 2px #0f172a; font-size: 0.75rem; }
+  .letter-box.space { background: transparent; cursor: default; }
+  .contestants { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.6rem; margin-top: 1rem; justify-items: center; }
+  .contestant { background: #020617; border-radius: 14px; padding: 0.5rem; text-align: center; font-size: 0.75rem; width: 100px; }
   .contestant.active { box-shadow: 0 0 0 3px #facc15; }
-  .avatar { width: 64px; height: 64px; margin: 0 auto 0.25rem; border-radius: 50%; background: linear-gradient(135deg, #38bdf8, #a78bfa); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; }
+  .avatar { width: 64px; height: 64px; margin: 0 auto 0.25rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; }
   .score { font-weight: bold; margin-top: 0.15rem; }
-
-  .admin-panel { position: fixed; top: 50px; right: 12px; width: 300px; background: #020617; border-radius: 14px; padding: 1rem; display: none; z-index: 20; }
+  .admin-panel { position: fixed; top: 50px; right: 12px; width: 300px; background: #020617; border-radius: 14px; padding: 1rem; display: none; z-index: 101; }
   .admin-panel.open { display: block; }
-  .admin-row { display: grid; grid-template-columns: 1fr 90px; gap: 0.4rem; margin-bottom: 0.4rem; }
+  .admin-row { display: grid; grid-template-columns: 2fr 1fr; gap: 0.4rem; margin-bottom: 0.4rem; }
   .admin-panel input, .admin-panel select, .admin-panel textarea { width: 100%; border-radius: 8px; border: none; padding: 0.35rem; font-size: 0.75rem; }
 </style>
 </head>
 <body>
 
+<h1>Mobi-wheel of Fortune</h1>
 <button id="adminBtn">Admin</button>
 <div class="admin-panel" id="adminPanel">
   <strong>Contestants</strong>
-  <div id="adminPlayers"></div>
+  <div id="adminPlayers">
+    <div class="admin-row"><input type="text" placeholder="Player 1 Name" id="player1"><select id="gender1"><option value="male">Male</option><option value="female">Female</option></select></div>
+    <div class="admin-row"><input type="text" placeholder="Player 2 Name" id="player2"><select id="gender2"><option value="male">Male</option><option value="female">Female</option></select></div>
+    <div class="admin-row"><input type="text" placeholder="Player 3 Name" id="player3"><select id="gender3"><option value="male">Male</option><option value="female">Female</option></select></div>
+    <div class="admin-row"><input type="text" placeholder="Player 4 Name" id="player4"><select id="gender4"><option value="male">Male</option><option value="female">Female</option></select></div>
+    <div class="admin-row"><input type="text" placeholder="Player 5 Name" id="player5"><select id="gender5"><option value="male">Male</option><option value="female">Female</option></select></div>
+  </div>
   <strong>Phrases</strong>
   <textarea id="phrasesInput">HELLO WORLD
 SPIN TO WIN</textarea>
@@ -91,8 +71,139 @@ SPIN TO WIN</textarea>
 </div>
 
 <script>
-// All previous JS logic for players, wheel spinning, letter guesses, vowels, solve button, scoring, admin panel remains the same
-// Only the drawWheel function updated for the new colors and JACKPOT segment, arrow and wheelAmount now functional.
+const adminBtn = document.getElementById('adminBtn');
+const adminPanel = document.getElementById('adminPanel');
+const phrasesInput = document.getElementById('phrasesInput');
+let phrases = [];
+let currentPhrase = '';
+let displayedLetters = [];
+let currentPlayerIndex = 0;
+let players = [];
+let currentSpinValue = 0;
+let isSpinning = false;
+
+adminBtn.addEventListener('click', ()=>{adminPanel.classList.toggle('open');});
+
+const saveAdmin = document.getElementById('saveAdmin');
+const contestantsDiv = document.getElementById('contestants');
+saveAdmin.addEventListener('click', () => {
+  contestantsDiv.innerHTML = '';
+  phrases = phrasesInput.value.split('\n').map(p => p.trim()).filter(p => p);
+  currentPhrase = phrases[Math.floor(Math.random()*phrases.length)];
+  displayedLetters = currentPhrase.split('').map(c => c===' '?' ':'_');
+  players = [];
+  for(let i=1;i<=5;i++){
+    const name = document.getElementById('player'+i).value || 'Player '+i;
+    const gender = document.getElementById('gender'+i).value;
+    players.push({name, gender, score:0});
+    const avatar = document.createElement('div');
+    avatar.classList.add('contestant');
+    avatar.id = `playerBox${i}`;
+    avatar.innerHTML = `<div class='avatar'>${gender==='male'?'👨':'👩'}</div><div>${name}</div><div class='score'>0</div>`;
+    if(i===1) avatar.classList.add('active');
+    contestantsDiv.appendChild(avatar);
+  }
+  adminPanel.classList.remove('open');
+  renderPhraseBoard();
+});
+
+const phraseBoard = document.getElementById('phraseBoard');
+function renderPhraseBoard(){
+  phraseBoard.innerHTML = '';
+  const row = document.createElement('div');
+  row.classList.add('phrase-row');
+  displayedLetters.forEach((c,i)=>{
+    const box = document.createElement('div');
+    box.classList.add('letter-box');
+    if(c===' ') box.classList.add('space');
+    else if(c==='_') box.classList.add('hidden');
+    box.textContent = c!=='_'?c:'';
+    row.appendChild(box);
+  });
+  phraseBoard.appendChild(row);
+}
+
+// Wheel code
+const wheel = document.getElementById('wheel');
+const ctx = wheel.getContext('2d');
+const wheelValues = [50,100,200,300,400,500,600,700,800,900,1000,'BANKRUPT'];
+const r = wheel.width/2;
+let currentRotation = 0;
+function drawWheel(){
+  const slice = 2*Math.PI/wheelValues.length;
+  ctx.clearRect(0,0,wheel.width,wheel.height);
+  ctx.save();
+  ctx.translate(r,r);
+  wheelValues.forEach((v,i)=>{
+    ctx.beginPath();
+    ctx.fillStyle = i%2?'#d32f2f':'#fff';
+    if(v==='BANKRUPT') ctx.fillStyle='#000';
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,r,slice*i,slice*(i+1));
+    ctx.fill();
+    ctx.save();
+    ctx.rotate(slice*i+slice/2);
+    ctx.textAlign='right';
+    ctx.fillStyle=(v==='BANKRUPT'||i%2)?'#fff':'#000';
+    ctx.font='bold 14px sans-serif';
+    ctx.fillText(v,r-10,5);
+    ctx.restore();
+  });
+  ctx.restore();
+}
+drawWheel();
+
+const spinBtn = document.getElementById('spinBtn');
+const wheelAmount = document.getElementById('wheelAmount');
+spinBtn.addEventListener('click', () => {
+  if(isSpinning) return;
+  isSpinning = true;
+  const spinDuration = 3000;
+  const startTime = performance.now();
+  const slice = 2*Math.PI/wheelValues.length;
+  const targetRotation = Math.random() * 10 * 2 * Math.PI + Math.random() * 2 * Math.PI;
+
+  function animate(time){
+    const elapsed = time - startTime;
+    const progress = Math.min(elapsed/spinDuration,1);
+    currentRotation = targetRotation * easeOutCubic(progress);
+    drawWheel();
+    if(progress<1) requestAnimationFrame(animate);
+    else {
+      const stoppedIndex = Math.floor((wheelValues.length - (currentRotation % (2*Math.PI))/slice) % wheelValues.length);
+      const value = wheelValues[stoppedIndex];
+      wheelAmount.textContent = typeof value === 'number' ? `$${value}` : value;
+      currentSpinValue = value;
+      isSpinning = false;
+    }
+  }
+  requestAnimationFrame(animate);
+});
+
+function easeOutCubic(t){ return (--t)*t*t+1; }
+
+// Keyboard letter guessing
+document.addEventListener('keydown', (e)=>{
+  if(!currentPhrase || isSpinning) return;
+  const letter = e.key.toUpperCase();
+  if(!letter.match(/[A-Z]/)) return;
+  let correct = false;
+  displayedLetters.forEach((c,i)=>{
+    if(currentPhrase[i]===letter && displayedLetters[i]==='_'){
+      displayedLetters[i] = letter;
+      correct = true;
+    }
+  });
+  if(!correct){
+    document.getElementById(`playerBox${currentPlayerIndex+1}`).classList.remove('active');
+    currentPlayerIndex = (currentPlayerIndex+1)%players.length;
+    document.getElementById(`playerBox${currentPlayerIndex+1}`).classList.add('active');
+  } else {
+    players[currentPlayerIndex].score += (typeof currentSpinValue==='number'?currentSpinValue:0);
+    document.querySelector(`#playerBox${currentPlayerIndex+1} .score`).textContent = players[currentPlayerIndex].score;
+  }
+  renderPhraseBoard();
+});
 </script>
 
 </body>
