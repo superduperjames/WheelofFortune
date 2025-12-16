@@ -133,10 +133,11 @@ function renderPhraseBoard(){
   phraseBoard.appendChild(row);
 }
 
-function drawWheel(){
+function drawWheel(rotation=0){
   ctx.clearRect(0,0,wheel.width,wheel.height);
   ctx.save();
   ctx.translate(r,r);
+  ctx.rotate(rotation);
   for(let i=0;i<wheelValues.length;i++){
     ctx.beginPath();
     ctx.fillStyle = i%2?'#d32f2f':'#fff';
@@ -170,13 +171,7 @@ function spinWheel(){
     const t = Math.min(elapsed/duration,1);
     const easeOut = 1 - Math.pow(1-t,3);
     currentRotation = initialRotation + easeOut*spins*2*Math.PI;
-
-    ctx.save();
-    ctx.clearRect(0,0,wheel.width,wheel.height);
-    ctx.translate(r,r);
-    ctx.rotate(currentRotation);
-    drawWheel();
-    ctx.restore();
+    drawWheel(currentRotation);
 
     if(t<1) requestAnimationFrame(animate);
     else {
