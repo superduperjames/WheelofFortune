@@ -12,7 +12,7 @@
   .wheel-area { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; position: relative; z-index: 1; }
   #wheelAmount { padding: 0.5rem 1rem; background: #16a34a; color: #fff; font-weight: bold; border-radius: 8px; margin-bottom: 0.5rem; font-size: 1.4rem; text-align: center; min-width: 80px; z-index: 2; }
   canvas { background: none; border-radius: 50%; box-shadow: 0 0 40px rgba(255,215,0,0.35); z-index: 1; cursor: pointer; }
-  .arrow { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-bottom: 35px solid red; z-index: 5; }
+  .arrow { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 25px solid transparent; border-right: 25px solid transparent; border-bottom: 50px solid #FFD700; z-index: 10; }
   .controls { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; margin-top: 1rem; }
   .controls button { padding: 0.4rem 1rem; font-size: 0.85rem; border-radius: 999px; border: none; font-weight: 600; cursor: pointer; z-index: 2; }
   #spinBtn { background: #16a34a; color: #fff; }
@@ -74,16 +74,6 @@ SPIN TO WIN</textarea>
 const adminBtn = document.getElementById('adminBtn');
 const adminPanel = document.getElementById('adminPanel');
 const phrasesInput = document.getElementById('phrasesInput');
-let phrases = [];
-let currentPhrase = '';
-let displayedLetters = [];
-let currentPlayerIndex = 0;
-let players = [];
-let currentSpinValue = 0;
-let isSpinning = false;
-
-adminBtn.addEventListener('click', ()=>{adminPanel.classList.toggle('open');});
-
 const saveAdmin = document.getElementById('saveAdmin');
 const contestantsDiv = document.getElementById('contestants');
 const phraseBoard = document.getElementById('phraseBoard');
@@ -92,9 +82,20 @@ const spinBtn = document.getElementById('spinBtn');
 const solveBtn = document.getElementById('solveBtn');
 const wheel = document.getElementById('wheel');
 const ctx = wheel.getContext('2d');
+
+let phrases = [];
+let currentPhrase = '';
+let displayedLetters = [];
+let players = [];
+let currentPlayerIndex = 0;
+let currentSpinValue = 0;
+let isSpinning = false;
+let currentRotation = 0;
 const wheelValues = [50,100,200,300,400,500,600,700,800,900,1000,'BANKRUPT'];
 const r = wheel.width/2;
-let currentRotation = 0;
+const slice = 2*Math.PI/wheelValues.length;
+
+adminBtn.addEventListener('click', ()=>{adminPanel.classList.toggle('open');});
 
 saveAdmin.addEventListener('click', () => {
   contestantsDiv.innerHTML = '';
@@ -133,58 +134,64 @@ function renderPhraseBoard(){
 }
 
 function drawWheel(){
-  const slice = 2*Math.PI/wheelValues.length;
   ctx.clearRect(0,0,wheel.width,wheel.height);
   ctx.save();
   ctx.translate(r,r);
-  wheelValues.forEach((v,i)=>{
+  for(let i=0;i<wheelValues.length;i++){
     ctx.beginPath();
     ctx.fillStyle = i%2?'#d32f2f':'#fff';
-    if(v==='BANKRUPT') ctx.fillStyle='#000';
+    if(wheelValues[i]==='BANKRUPT') ctx.fillStyle='#000';
     ctx.moveTo(0,0);
     ctx.arc(0,0,r,slice*i,slice*(i+1));
     ctx.fill();
     ctx.save();
     ctx.rotate(slice*i+slice/2);
     ctx.textAlign='right';
-    ctx.fillStyle=(v==='BANKRUPT'||i%2)?'#fff':'#000';
+    ctx.fillStyle=(wheelValues[i]==='BANKRUPT'||i%2)?'#fff':'#000';
     ctx.font='bold 14px sans-serif';
-    ctx.fillText(v,r-10,5);
+    ctx.fillText(wheelValues[i],r-10,5);
     ctx.restore();
-  });
+  }
   ctx.restore();
 }
 
 drawWheel();
 
-function easeOutCubic(t){ return (--t)*t*t+1; }
-
-spinBtn.addEventListener('click', ()=>{
+function spinWheel(){
   if(isSpinning) return;
   isSpinning = true;
-  const spinDuration = 3000;
-  const startTime = performance.now();
-  const slice = 2*Math.PI/wheelValues.length;
-  const targetRotation = currentRotation + Math.random()*10*2*Math.PI;
+  const duration = 4000;
+  const spins = Math.random()*6+6;
+  const start = performance.now();
+  const initialRotation = currentRotation;
 
   function animate(time){
-    const elapsed = time - startTime;
-    const progress = Math.min(elapsed/spinDuration,1);
-    currentRotation = currentRotation + (targetRotation-currentRotation)*easeOutCubic(progress);
+    const elapsed = time-start;
+    const t = Math.min(elapsed/duration,1);
+    const easeOut = 1 - Math.pow(1-t,3);
+    currentRotation = initialRotation + easeOut*spins*2*Math.PI;
+
+    ctx.save();
+    ctx.clearRect(0,0,wheel.width,wheel.height);
+    ctx.translate(r,r);
+    ctx.rotate(currentRotation);
     drawWheel();
-    if(progress<1) requestAnimationFrame(animate);
+    ctx.restore();
+
+    if(t<1) requestAnimationFrame(animate);
     else {
-      currentRotation = targetRotation % (2*Math.PI);
-      drawWheel();
-      const stoppedIndex = Math.floor((wheelValues.length - (currentRotation % (2*Math.PI))/slice) % wheelValues.length);
+      currentRotation %= 2*Math.PI;
+      const stoppedIndex = Math.floor((wheelValues.length - currentRotation/slice) % wheelValues.length);
       const value = wheelValues[stoppedIndex];
       currentSpinValue = value;
       wheelAmount.textContent = typeof value==='number'?`$${value}`:value;
-      isSpinning = false;
+      isSpinning=false;
     }
   }
   requestAnimationFrame(animate);
-});
+}
+
+spinBtn.addEventListener('click', spinWheel);
 
 solveBtn.addEventListener('click', ()=>{
   const answer = prompt('Enter your solution:');
