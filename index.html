@@ -204,107 +204,20 @@ function spinWheel(){
 
 spinBtn.addEventListener('click', spinWheel);
 
-solveBtn.addEventListener('click', () => {
-  const popup = window.open('', 'solvePopup', 'width=420,height=300');
-
-  popup.document.write(`
-    <html>
-    <head>
-      <title>Solve</title>
-      <style>
-        body {
-          background: radial-gradient(circle at top, #1f2937, #020617);
-          color: #facc15;
-          font-family: system-ui, sans-serif;
-          text-align: center;
-          padding: 20px;
-        }
-        h2 {
-          margin-bottom: 10px;
-          text-shadow: 0 0 10px gold;
-        }
-        #timer {
-          font-size: 1.4rem;
-          margin-bottom: 15px;
-        }
-        input {
-          width: 90%;
-          padding: 10px;
-          font-size: 1.1rem;
-          border-radius: 8px;
-          border: none;
-        }
-        button {
-          margin-top: 12px;
-          padding: 8px 18px;
-          font-size: 1rem;
-          border-radius: 999px;
-          border: none;
-          background: #16a34a;
-          color: white;
-          cursor: pointer;
-        }
-        .wrong {
-          animation: flash 0.4s infinite;
-          font-size: 2rem;
-          color: red;
-          margin-top: 15px;
-        }
-        @keyframes flash {
-          0% { opacity: 1; }
-          50% { opacity: 0.2; }
-          100% { opacity: 1; }
-        }
-      </style>
-    </head>
-    <body>
-      <h2>Solve the puzzle:</h2>
-      <div id="timer">10</div>
-      <input id="solution" autofocus />
-      <br>
-      <button onclick="submitSolve()">Submit</button>
-      <div id="result"></div>
-
-      <script>
-        let timeLeft = 10;
-        const timerEl = document.getElementById('timer');
-        const input = document.getElementById('solution');
-        const result = document.getElementById('result');
-
-        const countdown = setInterval(() => {
-          timeLeft--;
-          timerEl.textContent = timeLeft;
-
-          if (timeLeft <= 0) {
-            clearInterval(countdown);
-            input.disabled = true;
-            result.textContent = 'WRONG';
-            result.className = 'wrong';
-          }
-        }, 1000);
-
-        function submitSolve() {
-          clearInterval(countdown);
-          window.opener.checkSolve(input.value);
-          window.close();
-        }
-      </script>
-    </body>
-    </html>
-  `);
-
-  popup.document.close();
-});
-
-function checkSolve(answer){
+solveBtn.addEventListener('click', ()=>{
+  const answer = prompt('Enter your solution:');
   if(answer && answer.toUpperCase() === currentPhrase.toUpperCase()){
     displayedLetters = currentPhrase.split('');
     renderPhraseBoard();
-    alert(players[currentPlayerIndex].name + ' solved the phrase!');
-  } else {
-    alert('Incorrect!');
-  }
-}
+    alert(players[currentPlayerIndex].name+' solved the phrase!');
+    const selected = phrases[Math.floor(Math.random()*phrases.length)];
+    currentPhrase = selected.text;
+    currentClue = selected.clue;
+    clueDiv.textContent = currentClue;
+    displayedLetters = currentPhrase.split('').map(c => c===' '?' ':'_');
+    renderPhraseBoard();
+  } else alert('Incorrect!');
+});
 
 document.addEventListener('keydown', e=>{
   if(!currentPhrase || isSpinning) return;
@@ -338,3 +251,4 @@ document.addEventListener('keydown', e=>{
 
 </body>
 </html>
+
